@@ -88,14 +88,18 @@ export default function SearchCommand({ isOpen, onClose }: SearchCommandProps) {
   const allItems = groupedItems.flatMap((g) => g.items);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     setSelectedIndex(0);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [query]);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (isOpen) {
       inputRef.current?.focus();
       setQuery("");
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [isOpen]);
 
   useEffect(() => {

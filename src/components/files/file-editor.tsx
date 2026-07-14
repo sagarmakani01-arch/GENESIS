@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useFilesStore } from "@/lib/files-store";
 import {
   Save,
-  Share2,
   Brain,
   ChevronRight,
   FileText,
@@ -17,7 +16,6 @@ import { cn } from "@/lib/utils";
 export default function FileEditor() {
   const { nodes, selectedId, updateContent, toggleShareWithAI, getPath } = useFilesStore();
   const [localContent, setLocalContent] = useState("");
-  const [isSaved, setIsSaved] = useState(true);
   const [showAI, setShowAI] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiMessages, setAiMessages] = useState<{ role: "user" | "ai"; content: string }[]>([]);
@@ -25,26 +23,22 @@ export default function FileEditor() {
   const node = selectedId ? nodes[selectedId] : null;
   const isFile = node?.type === "file";
   const path = selectedId ? getPath(selectedId) : [];
+  const isSaved = isFile && node ? localContent === (node.content || "") : true;
+  const prevNodeRef = useRef(node);
 
   useEffect(() => {
-    if (node?.type === "file") {
+    const prevNode = prevNodeRef.current;
+    if (node?.type === "file" && node !== prevNode) {
       setLocalContent(node.content || "");
-      setIsSaved(true);
     }
-  }, [selectedId, node]);
+    prevNodeRef.current = node;
+  }, [node]);
 
   const handleSave = useCallback(() => {
     if (selectedId && isFile) {
       updateContent(selectedId, localContent);
-      setIsSaved(true);
     }
   }, [selectedId, isFile, localContent, updateContent]);
-
-  useEffect(() => {
-    if (isFile && node) {
-      setIsSaved(localContent === (node.content || ""));
-    }
-  }, [localContent, isFile, node]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

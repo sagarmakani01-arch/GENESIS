@@ -147,14 +147,8 @@ export default function CoFounderPage() {
       if (!reader) throw new Error("No response stream");
 
       const decoder = new TextDecoder();
-      let accumulated = "";
-
-      const aiMessage: Message = {
-        id: generateId(),
-        role: "assistant",
-        content: "",
-        timestamp: new Date().toISOString(),
-      };
+      const aiMessageId = generateId();
+      const aiTimestamp = new Date().toISOString();
 
       while (true) {
         const { done, value } = await reader.read();
@@ -168,43 +162,45 @@ export default function CoFounderPage() {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.content) {
-                accumulated += data.content;
-                aiMessage.content = accumulated;
-
-                setConversations((prev) =>
-                  prev.map((c) =>
+                setConversations((prev) => {
+                  const currentMsg = prev
+                    .find((c) => c.id === activeConversationId)
+                    ?.messages.find((m) => m.id === aiMessageId);
+                  const newContent = (currentMsg?.content || "") + data.content;
+                  return prev.map((c) =>
                     c.id === activeConversationId
                       ? {
                           ...c,
                           messages: [
-                            ...c.messages.filter((m) => m.id !== aiMessage.id),
-                            { ...aiMessage },
+                            ...c.messages.filter((m) => m.id !== aiMessageId),
+                            { id: aiMessageId, role: "assistant", content: newContent, timestamp: aiTimestamp },
                           ],
                         }
                       : c
-                  )
-                );
+                  );
+                });
               }
             } catch {
               // skip malformed
             }
           } else if (line.trim() && !line.startsWith("data:")) {
-            accumulated += line;
-            aiMessage.content = accumulated;
-
-            setConversations((prev) =>
-              prev.map((c) =>
+            setConversations((prev) => {
+              const currentMsg = prev
+                .find((c) => c.id === activeConversationId)
+                ?.messages.find((m) => m.id === aiMessageId);
+              const newContent = (currentMsg?.content || "") + line;
+              return prev.map((c) =>
                 c.id === activeConversationId
                   ? {
                       ...c,
                       messages: [
-                        ...c.messages.filter((m) => m.id !== aiMessage.id),
-                        { ...aiMessage },
+                        ...c.messages.filter((m) => m.id !== aiMessageId),
+                        { id: aiMessageId, role: "assistant", content: newContent, timestamp: aiTimestamp },
                       ],
                     }
                   : c
-              )
-            );
+              );
+            });
           }
         }
       }
@@ -217,7 +213,7 @@ export default function CoFounderPage() {
             ? {
                 ...c,
                 messages: c.messages.map((m) =>
-                  m.id === aiMessage.id ? { ...m, reasoningSteps: finalSteps } : m
+                  m.id === aiMessageId ? { ...m, reasoningSteps: finalSteps } : m
                 ),
               }
             : c

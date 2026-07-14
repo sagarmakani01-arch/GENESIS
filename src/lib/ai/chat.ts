@@ -58,12 +58,14 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
   return parts.join('\n');
 }
 
+const DEFAULT_MODEL = process.env.AI_MODEL || 'llama3.2';
+
 export async function generateResponse(
   messages: AIMessage[],
   options: AIOptions = {}
 ): Promise<{ content: string; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   return chat(messages, {
-    model: options.model || 'gpt-4o',
+    model: options.model || DEFAULT_MODEL,
     temperature: options.temperature ?? 0.7,
     maxTokens: options.maxTokens ?? 4096,
   });
@@ -74,7 +76,7 @@ export async function streamResponse(
   options: AIOptions = {}
 ): Promise<ReadableStream<Uint8Array>> {
   return chatStream(messages, {
-    model: options.model || 'gpt-4o',
+    model: options.model || DEFAULT_MODEL,
     temperature: options.temperature ?? 0.7,
     maxTokens: options.maxTokens ?? 4096,
     stream: true,
